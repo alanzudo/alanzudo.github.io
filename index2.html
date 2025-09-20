@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Party</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .rounded-card {
+            background-color: #1e1e1e;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+        }
+        .sync-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.4);
+        }
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn-base {
+            transition: all 0.2s ease-in-out;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 1rem;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* Custom scrollbar for chat */
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #4a4a4a;
+            border-radius: 4px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: #2b2b2b;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col min-h-screen">
+
+    <main class="container flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Video Player & Controls -->
+        <div class="lg:col-span-2 flex flex-col space-y-6">
+            <h1 class="text-3xl font-bold text-center mt-4">Watch Party 🎬</h1>
+            <p id="user-id-display" class="text-center text-sm text-gray-400">Loading...</p>
+
+            <div class="rounded-card p-6">
+                <div class="video-container">
+                    <iframe id="video-iframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="rounded-lg"></iframe>
+                </div>
+                <div class="mt-4 flex flex-col space-y-4">
+                    <input type="text" id="video-url-input" placeholder="Paste YouTube/Vimeo/other video URL here..." class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="load-video-btn" class="btn-base px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Load Video
+                    </button>
+                    <div class="flex space-x-4">
+                        <button id="sync-video-btn" class="btn-base flex-1 px-6 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500">
+                            Sync Video
+                        </button>
+                        <button id="seek-to-start-btn" class="btn-base flex-1 px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                            Seek to Start
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Management -->
+            <div class="rounded-card p-6">
+                <h2 class="text-xl font-bold mb-4">Room Management</h2>
+                <div class="flex flex-col space-y-4">
+                    <input type="text" id="friend-id-input" placeholder="Enter a friend's User ID to join their room" class="w-full p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <button id="join-room-btn" class="btn-base px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        Join Room
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="lg:col-span-1 flex flex-col space-y-6">
+            <h2 class="text-3xl font-bold text-center mt-4">Chat</h2>
+            <div class="rounded-card p-6 flex flex-col flex-grow min-h-[400px]">
+                <div id="chat-messages" class="chat-container flex-grow overflow-y-auto space-y-4 pr-2">
+                    <!-- Chat messages will be dynamically added here -->
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Type a message..." class="flex-grow p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <button id="send-chat-btn" class="btn-base px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center transition-opacity duration-300">
+        <div class="text-white text-xl font-semibold flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
+            Loading...
+        </div>
+    </div>
+    
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center hidden">
+        <div class="rounded-card p-8 max-w-sm w-full text-center">
+            <p id="modal-message" class="text-lg mb-4"></p>
+            <button id="modal-close-btn" class="btn-base px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('debug');
+        
+        // Global variables for Firebase services
+        let db, auth;
+        let userId;
+        let currentRoomId = null;
+        let unsubscribeRoom, unsubscribeChat;
+        let isSyncing = false; // Prevents sync loops
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const videoIframe = document.getElementById('video-iframe');
+        const videoUrlInput = document.getElementById('video-url-input');
+        const loadVideoBtn = document.getElementById('load-video-btn');
+        const syncVideoBtn = document.getElementById('sync-video-btn');
+        const seekToStartBtn = document.getElementById('seek-to-start-btn');
+        const friendIdInput = document.getElementById('friend-id-input');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const modalContainer = document.getElementById('modal-container');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modalContainer.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            modalContainer.classList.add('hidden');
+        });
+
+        // Parse iframe URL to get embed code
+        function getIframeEmbedUrl(url) {
+            const youtubeRegex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+            const vimeoRegex = /vimeo\.com\/(\d+)/;
+            
+            const youtubeMatch = url.match(youtubeRegex);
+            const vimeoMatch = url.match(vimeoRegex);
+
+            if (youtubeMatch && youtubeMatch[1]) {
+                return `https://www.youtube.com/embed/${youtubeMatch[1]}?autoplay=1&enablejsapi=1`;
+            } else if (vimeoMatch && vimeoMatch[1]) {
+                return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&dnt=1`;
+            } else {
+                return url; // Fallback to raw URL
+            }
+        }
+
+        async function initFirebase() {
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                
+                if (__initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = `Your User ID: ${userId}`;
+                        loadingOverlay.classList.add('hidden');
+                    } else {
+                        userId = crypto.randomUUID();
+                        userIdDisplay.textContent = `Your User ID (unauthenticated): ${userId}`;
+                        loadingOverlay.classList.add('hidden');
+                    }
+                    // Auto-join or create a room with self
+                    await handleRoomManagement();
+                });
+            } catch (error) {
+                console.error("Firebase initialization error:", error);
+                showModal("Failed to initialize. Check the console for details.");
+            }
+        }
+
+        async function handleRoomManagement() {
+            // Unsubscribe from previous listeners if they exist
+            if (unsubscribeRoom) unsubscribeRoom();
+            if (unsubscribeChat) unsubscribeChat();
+
+            const myRoomPath = `/artifacts/${__app_id}/public/data/watchparty-rooms`;
+            const room1 = doc(db, myRoomPath, userId);
+            
+            try {
+                const docSnap = await getDoc(room1);
+                if (!docSnap.exists()) {
+                    await setDoc(room1, {
+                        createdAt: serverTimestamp(),
+                        videoUrl: "",
+                        syncTimestamp: 0
+                    });
+                }
+                currentRoomId = userId;
+                setupListeners(currentRoomId);
+            } catch (e) {
+                console.error("Error setting up room:", e);
+                showModal("Could not create or join your personal room. Please try again.");
+            }
+        }
+
+        async function joinRoom(friendId) {
+            if (!friendId) {
+                showModal("Please enter a friend's User ID.");
+                return;
+            }
+            if (friendId === userId) {
+                showModal("You cannot join your own room.");
+                return;
+            }
+
+            // Unsubscribe from current listeners
+            if (unsubscribeRoom) unsubscribeRoom();
+            if (unsubscribeChat) unsubscribeChat();
+
+            const friendRoomPath = `/artifacts/${__app_id}/public/data/watchparty-rooms`;
+            const roomDoc = doc(db, friendRoomPath, friendId);
+
+            try {
+                const docSnap = await getDoc(roomDoc);
+                if (docSnap.exists()) {
+                    currentRoomId = friendId;
+                    setupListeners(currentRoomId);
+                    showModal(`Joined room with user: ${friendId}`);
+                } else {
+                    showModal("The user ID you entered does not have an active room.");
+                }
+            } catch (e) {
+                console.error("Error joining room:", e);
+                showModal("An error occurred while trying to join the room.");
+            }
+        }
+
+        function setupListeners(roomId) {
+            const roomDocRef = doc(db, `/artifacts/${__app_id}/public/data/watchparty-rooms`, roomId);
+            const chatCollRef = collection(db, `/artifacts/${__app_id}/public/data/watchparty-rooms/${roomId}/messages`);
+            
+            // Listen for room changes
+            unsubscribeRoom = onSnapshot(roomDocRef, (docSnap) => {
+                if (docSnap.exists() && !isSyncing) {
+                    const data = docSnap.data();
+                    const currentSrc = videoIframe.src.replace(/\?.*$/, ''); // Remove query params for comparison
+                    const newSrc = getIframeEmbedUrl(data.videoUrl).replace(/\?.*$/, '');
+
+                    if (newSrc && currentSrc !== newSrc) {
+                        videoIframe.src = getIframeEmbedUrl(data.videoUrl);
+                        console.log("Video URL updated by host.");
+                    }
+                    
+                    if (data.syncTimestamp > 0) {
+                        // This simple sync mechanism reloads the iframe on seek/sync.
+                        // A more advanced solution would use the JS API of the player.
+                        console.log(`Syncing video to timestamp: ${data.syncTimestamp}`);
+                        videoIframe.src = `${getIframeEmbedUrl(data.videoUrl)}&start=${Math.floor(data.syncTimestamp)}`;
+                    }
+                }
+            }, (error) => {
+                console.error("Error listening to room:", error);
+                showModal("Connection to the room lost. Please refresh.");
+            });
+
+            // Listen for chat messages
+            const q = query(chatCollRef, orderBy("timestamp"));
+            unsubscribeChat = onSnapshot(q, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const message = change.doc.data();
+                        displayMessage(message);
+                    }
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to bottom
+            }, (error) => {
+                console.error("Error listening to chat:", error);
+            });
+        }
+
+        async function loadVideo() {
+            if (!currentRoomId) {
+                showModal("Please wait, room is still being set up.");
+                return;
+            }
+            const url = videoUrlInput.value;
+            if (!url) return;
+
+            const roomDocRef = doc(db, `/artifacts/${__app_id}/public/data/watchparty-rooms`, currentRoomId);
+            try {
+                await setDoc(roomDocRef, {
+                    videoUrl: url,
+                    syncTimestamp: 0,
+                    lastUpdatedBy: userId,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                console.log("Video URL updated in Firestore.");
+            } catch (e) {
+                console.error("Error updating video URL:", e);
+                showModal("Failed to update video URL. Check console for details.");
+            }
+        }
+        
+        async function syncVideo() {
+            if (!currentRoomId) return;
+            isSyncing = true; // Prevent listener from reacting to this own update
+            const roomDocRef = doc(db, `/artifacts/${__app_id}/public/data/watchparty-rooms`, currentRoomId);
+            try {
+                // In a real app, this would use the player's JS API to get the current time.
+                // For this example, we'll just set a timestamp for demonstration.
+                await setDoc(roomDocRef, {
+                    syncTimestamp: Date.now() / 1000,
+                    lastUpdatedBy: userId,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                console.log("Video sync command sent.");
+            } catch (e) {
+                console.error("Error syncing video:", e);
+            } finally {
+                isSyncing = false;
+            }
+        }
+        
+        async function seekToStart() {
+            if (!currentRoomId) return;
+            isSyncing = true;
+            const roomDocRef = doc(db, `/artifacts/${__app_id}/public/data/watchparty-rooms`, currentRoomId);
+            try {
+                await setDoc(roomDocRef, {
+                    syncTimestamp: 0.1, // A non-zero value to trigger the listener
+                    lastUpdatedBy: userId,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                console.log("Seek to start command sent.");
+            } catch (e) {
+                console.error("Error seeking to start:", e);
+            } finally {
+                isSyncing = false;
+            }
+        }
+
+        async function sendMessage() {
+            if (!currentRoomId) {
+                showModal("Please join or create a room first.");
+                return;
+            }
+            const messageText = chatInput.value.trim();
+            if (!messageText) return;
+
+            const chatCollRef = collection(db, `/artifacts/${__app_id}/public/data/watchparty-rooms/${currentRoomId}/messages`);
+
+            try {
+                await addDoc(chatCollRef, {
+                    senderId: userId,
+                    message: messageText,
+                    timestamp: serverTimestamp()
+                });
+                chatInput.value = '';
+            } catch (e) {
+                console.error("Error sending message:", e);
+                showModal("Failed to send message. Check console for details.");
+            }
+        }
+
+        function displayMessage(messageData) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', 'p-3', 'rounded-lg', 'break-words');
+            
+            if (messageData.senderId === userId) {
+                messageElement.classList.add('bg-blue-600', 'text-white', 'self-end');
+                messageElement.innerHTML = `You: ${messageData.message}`;
+            } else {
+                messageElement.classList.add('bg-gray-700', 'text-gray-200');
+                messageElement.innerHTML = `<span class="font-semibold text-teal-300">Other User:</span> ${messageData.message}`;
+            }
+            chatMessages.appendChild(messageElement);
+        }
+
+        // Event Listeners
+        loadVideoBtn.addEventListener('click', loadVideo);
+        syncVideoBtn.addEventListener('click', syncVideo);
+        seekToStartBtn.addEventListener('click', seekToStart);
+        joinRoomBtn.addEventListener('click', () => joinRoom(friendIdInput.value));
+        sendChatBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Initialize the app on window load
+        window.onload = function() {
+            initFirebase();
+        }
+
+    </script>
+</body>
+</html>
