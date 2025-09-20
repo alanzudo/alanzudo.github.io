@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WatchParty</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, pink);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #fdbb2d;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .video-section {
+            flex: 2;
+            min-width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            padding-top: 56.25%; /* 16:9 Aspect Ratio */
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            border: none;
+        }
+        
+        .video-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background: #fdbb2d;
+            color: #1a2a6c;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #ffcc44;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #777;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .chat-section {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-header {
+            padding: 15px 20px;
+            background: rgba(26, 42, 108, 0.9);
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 300px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            line-height: 1.4;
+        }
+        
+        .message.self {
+            align-self: flex-end;
+            background: #fdbb2d;
+            color: #1a2a6c;
+        }
+        
+        .message.friend {
+            align-self: flex-start;
+            background: #b21f1f;
+            color: white;
+        }
+        
+        .message.system {
+            align-self: center;
+            background: #1a2a6c;
+            color: white;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .chat-input button {
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .room-section {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .room-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .room-code {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #roomId {
+            font-weight: bold;
+            color: #fdbb2d;
+            font-size: 1.2rem;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #b21f1f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        
+        .status-indicator.online {
+            background: #4CAF50;
+        }
+        
+        .file-upload {
+            margin-top: 20px;
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #fdbb2d;
+            border-radius: 10px;
+        }
+        
+        .file-upload p {
+            margin-bottom: 15px;
+        }
+        
+        .connection-status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        #statusMessage {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: #333;
+        }
+        
+        #statusMessage.connected {
+            background: #4CAF50;
+        }
+        
+        .connection-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        
+        .video-source-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #333;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        
+        .tab.active {
+            background: #fdbb2d;
+            color: #1a2a6c;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        
+        .sync-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .video-controls {
+                justify-content: center;
+            }
+            
+            .room-info {
+                justify-content: center;
+            }
+            
+            .video-source-tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                margin-bottom: 5px;
+                border-radius: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WatchParty <i class="fas fa-film"></i></h1>
+            <p class="tagline">Alan e Bruna assistirem</p>
+        </header>
+        
+        <div class="room-section">
+            <div class="room-info">
+                <div class="room-code">
+                    <span>Room Code:</span>
+                    <span id="roomId">WP-5X2A9B</span>
+                    <button id="copyRoomCode"><i class="fas fa-copy"></i></button>
+                </div>
+                <div class="user-info">
+                    <div class="avatar">Y</div>
+                    <span>You</span>
+                </div>
+                <div class="user-info">
+                    <div class="avatar">F</div>
+                    <span>Friend</span>
+                    <span class="status-indicator" id="friendStatus"></span>
+                </div>
+            </div>
+            
+            <div class="file-upload">
+                <div class="video-source-tabs">
+                    <div class="tab active" data-tab="embed">Embed Code</div>
+                    <div class="tab" data-tab="url">Video URL</div>
+                </div>
+                
+                <div class="tab-content active" id="embed-tab">
+                    <p>Paste a video embed code (Dailymotion, Vimeo, etc.)</p>
+                    <textarea class="url-input" id="embedCode" placeholder='<iframe src="..." frameborder="0"></iframe>' rows="4"></textarea>
+                    <button id="loadEmbedBtn"><i class="fas fa-play"></i> Load Video</button>
+                    <div class="sync-info">
+                        <i class="fas fa-info-circle"></i> Note: Some platforms may have limited sync capabilities
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="url-tab">
+                    <p>Enter a video page URL (Dailymotion, Vimeo, etc.)</p>
+                    <input type="text" class="url-input" id="videoUrl" placeholder="https://www.dailymotion.com/video/...">
+                    <button id="loadUrlBtn"><i class="fas fa-play"></i> Load Video</button>
+                    <div class="sync-info">
+                        <i class="fas fa-info-circle"></i> We'll try to generate an embed from the URL
+                    </div>
+                </div>
+            </div>
+            
+            <div class="connection-status">
+                <span id="statusMessage">Not connected</span>
+            </div>
+            
+            <div class="connection-actions">
+                <button id="createRoomBtn"><i class="fas fa-plus"></i> Create Room</button>
+                <button id="joinRoomBtn"><i class="fas fa-sign-in-alt"></i> Join Room</button>
+            </div>
+            
+            <div id="joinSection" style="display: none; margin-top: 15px; text-align: center;">
+                <input type="text" id="roomCodeInput" placeholder="Enter room code" style="padding: 10px; border-radius: 5px; border: none; margin-right: 10px;">
+                <button id="connectToRoomBtn"><i class="fas fa-plug"></i> Connect</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container" id="videoContainer">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                        <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <p>Load a video to get started</p>
+                    </div>
+                </div>
+                
+                <div class="video-controls">
+                    <div class="control-group">
+                        <button id="playPauseBtn" disabled><i class="fas fa-play"></i> Play/Pause</button>
+                        <button id="restartBtn" disabled><i class="fas fa-redo"></i> Restart</button>
+                    </div>
+                    <div class="control-group">
+                        <button id="syncBtn" disabled><i class="fas fa-sync"></i> Sync</button>
+                        <button id="fullscreenBtn" disabled><i class="fas fa-expand"></i> Fullscreen</button>
+                    </div>
+                </div>
+                
+                <div class="sync-info" id="syncStatus">
+                    <i class="fas fa-sync"></i> Sync: Waiting for video...
+                </div>
+            </div>
+            
+            <div class="chat-section">
+                <div class="chat-header">
+                    <i class="fas fa-comments"></i> Chat
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system">Welcome to WatchParty! Create a room or join an existing one to start.</div>
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Type your message here..." disabled>
+                    <button id="sendMessageBtn" disabled><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const videoContainer = document.getElementById('videoContainer');
+        const roomIdElement = document.getElementById('roomId');
+        const copyRoomCodeBtn = document.getElementById('copyRoomCode');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const syncBtn = document.getElementById('syncBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const friendStatus = document.getElementById('friendStatus');
+        const createRoomBtn = document.getElementById('createRoomBtn');
+        const joinRoomBtn = document.getElementById('joinRoomBtn');
+        const joinSection = document.getElementById('joinSection');
+        const roomCodeInput = document.getElementById('roomCodeInput');
+        const connectToRoomBtn = document.getElementById('connectToRoomBtn');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const loadEmbedBtn = document.getElementById('loadEmbedBtn');
+        const embedCodeInput = document.getElementById('embedCode');
+        const loadUrlBtn = document.getElementById('loadUrlBtn');
+        const videoUrlInput = document.getElementById('videoUrl');
+        const syncStatus = document.getElementById('syncStatus');
+        
+        // State variables
+        let roomId = null;
+        let peer = null;
+        let conn = null;
+        let isConnected = false;
+        let isHost = false;
+        let ignoreVideoEvents = false;
+        let currentIframe = null;
+        let syncInterval = null;
+        let lastSyncTime = 0;
+        
+        // Initialize the app
+        function init() {
+            setupEventListeners();
+            generateRoomId();
+        }
+        
+        // Generate a random room ID
+        function generateRoomId() {
+            roomId = 'WP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            roomIdElement.textContent = roomId;
+            return roomId;
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            copyRoomCodeBtn.addEventListener('click', copyRoomCode);
+            playPauseBtn.addEventListener('click', playPause);
+            restartBtn.addEventListener('click', restart);
+            syncBtn.addEventListener('click', syncVideo);
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+            sendMessageBtn.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            createRoomBtn.addEventListener('click', createRoom);
+            joinRoomBtn.addEventListener('click', showJoinSection);
+            connectToRoomBtn.addEventListener('click', joinRoom);
+            
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show corresponding content
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === `${tabId}-tab`) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Video loading
+            loadEmbedBtn.addEventListener('click', loadEmbedVideo);
+            loadUrlBtn.addEventListener('click', loadUrlVideo);
+        }
+        
+        // Create a new room
+        function createRoom() {
+            statusMessage.textContent = 'Creating room...';
+            
+            // Initialize PeerJS
+            peer = new Peer(roomId, {
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                debug: 3
+            });
+            
+            peer.on('open', (id) => {
+                statusMessage.textContent = 'Room created. Share the code with your friend.';
+                statusMessage.classList.add('connected');
+                isHost = true;
+                
+                addSystemMessage('Room created. Your room code: ' + id);
+                addSystemMessage('Share this code with your friend to connect');
+                
+                // Enable buttons
+                enableControls();
+            });
+            
+            peer.on('connection', (connection) => {
+                conn = connection;
+                setupConnection();
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                statusMessage.textContent = 'Error: ' + err.type;
+                statusMessage.classList.remove('connected');
+            });
+        }
+        
+        // Show join section
+        function showJoinSection() {
+            joinSection.style.display = 'block';
+        }
+        
+        // Join an existing room
+        function joinRoom() {
+            const roomCode = roomCodeInput.value.trim();
+            if (!roomCode) {
+                alert('Please enter a room code');
+                return;
+            }
+            
+            statusMessage.textContent = 'Connecting to room...';
+            
+            // Initialize PeerJS
+            peer = new Peer({
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                debug: 3
+            });
+            
+            peer.on('open', (id) => {
+                roomId = roomCode;
+                roomIdElement.textContent = roomId;
+                
+                // Connect to the host
+                conn = peer.connect(roomCode);
+                setupConnection();
+            });
+            
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                statusMessage.textContent = 'Error: ' + err.type;
+                statusMessage.classList.remove('connected');
+            });
+        }
+        
+        // Set up the data connection
+        function setupConnection() {
+            conn.on('open', () => {
+                statusMessage.textContent = 'Connected';
+                statusMessage.classList.add('connected');
+                friendStatus.classList.add('online');
+                isConnected = true;
+                
+                addSystemMessage('Connected to your friend!');
+                
+                // Enable buttons
+                enableControls();
+                
+                // Start sync interval
+                startSyncInterval();
+            });
+            
+            conn.on('data', (data) => {
+                handleDataMessage(data);
+            });
+            
+            conn.on('close', () => {
+                statusMessage.textContent = 'Disconnected';
+                statusMessage.classList.remove('connected');
+                friendStatus.classList.remove('online');
+                isConnected = false;
+                
+                addSystemMessage('Your friend has disconnected');
+                
+                // Disable buttons except for room creation
+                disableControls();
+                
+                // Stop sync interval
+                stopSyncInterval();
+            });
+            
+            conn.on('error', (err) => {
+                console.error('Connection error:', err);
+                statusMessage.textContent = 'Connection error';
+                statusMessage.classList.remove('connected');
+            });
+        }
+        
+        // Handle incoming data messages
+        function handleDataMessage(data) {
+            switch (data.type) {
+                case 'play':
+                    ignoreVideoEvents = true;
+                    simulatePlay();
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    setTimeout(() => { ignoreVideoEvents = false; }, 100);
+                    break;
+                    
+                case 'pause':
+                    ignoreVideoEvents = true;
+                    simulatePause();
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+                    setTimeout(() => { ignoreVideoEvents = false; }, 100);
+                    break;
+                    
+                case 'seek':
+                    ignoreVideoEvents = true;
+                    simulateSeek(data.time);
+                    setTimeout(() => { ignoreVideoEvents = false; }, 100);
+                    break;
+                    
+                case 'load':
+                    loadVideoForFriend(data.videoType, data.videoData);
+                    break;
+                    
+                case 'chat':
+                    addMessage(data.message, 'friend');
+                    break;
+                    
+                case 'sync':
+                    handleSync(data);
+                    break;
+            }
+        }
+        
+        // Send data message
+        function sendDataMessage(message) {
+            if (conn && conn.open) {
+                conn.send(message);
+            }
+        }
+        
+        // Load video from embed code
+        function loadEmbedVideo() {
+            const embedCode = embedCodeInput.value.trim();
+            if (!embedCode) {
+                alert('Please enter an embed code');
+                return;
+            }
+            
+            // Clear video container
+            videoContainer.innerHTML = embedCode;
+            
+            // Get the iframe element
+            currentIframe = videoContainer.querySelector('iframe');
+            
+            if (!currentIframe) {
+                alert('Could not find a valid iframe in the embed code');
+                return;
+            }
+            
+            // Set up event listeners for the iframe
+            setupIframeListeners();
+            
+            // Notify friend
+            if (isConnected) {
+                sendDataMessage({
+                    type: 'load',
+                    videoType: 'embed',
+                    videoData: embedCode
+                });
+                addSystemMessage('Video loaded and shared with your friend');
+            } else {
+                addSystemMessage('Video loaded. Connect with a friend to share');
+            }
+            
+            // Update sync status
+            syncStatus.innerHTML = '<i class="fas fa-sync"></i> Sync: Active (estimated)';
+        }
+        
+        // Load video from URL
+        function loadUrlVideo() {
+            const videoUrl = videoUrlInput.value.trim();
+            if (!videoUrl) {
+                alert('Please enter a video URL');
+                return;
+            }
+            
+            // Try to generate embed code from URL
+            let embedCode = '';
+            
+            // Dailymotion
+            if (videoUrl.includes('dailymotion.com')) {
+                const videoId = videoUrl.split('/video/')[1]?.split('_')[0] || 
+                               videoUrl.split('dailymotion.com/video/')[1]?.split('?')[0];
+                if (videoId) {
+                    embedCode = `<iframe src="https://www.dailymotion.com/embed/video/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                }
+            }
+            // Vimeo
+            else if (videoUrl.includes('vimeo.com')) {
+                const videoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
+                if (videoId) {
+                    embedCode = `<iframe src="https://player.vimeo.com/video/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+                }
+            }
+            // Other - try to use URL directly
+            else {
+                embedCode = `<iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe>`;
+            }
+            
+            if (!embedCode) {
+                alert('Could not generate embed code from this URL. Please try using the embed code option instead.');
+                return;
+            }
+            
+            // Load the embed code
+            embedCodeInput.value = embedCode;
+            loadEmbedVideo();
+        }
+        
+        // Load video for friend
+        function loadVideoForFriend(videoType, videoData) {
+            if (videoType === 'embed') {
+                videoContainer.innerHTML = videoData;
+                currentIframe = videoContainer.querySelector('iframe');
+                
+                if (currentIframe) {
+                    setupIframeListeners();
+                    addSystemMessage('Video loaded from your friend');
+                    syncStatus.innerHTML = '<i class="fas fa-sync"></i> Sync: Active (estimated)';
+                }
+            }
+        }
+        
+        // Set up iframe event listeners
+        function setupIframeListeners() {
+            if (!currentIframe) return;
+            
+            // For iframes, we can't directly access the video element
+            // So we'll use a different approach for synchronization
+            addSystemMessage('IFrame loaded. Using estimated synchronization.');
+        }
+        
+        // Start sync interval
+        function startSyncInterval() {
+            // Clear existing interval
+            if (syncInterval) clearInterval(syncInterval);
+            
+            // Send sync signal every 5 seconds
+            syncInterval = setInterval(() => {
+                if (isConnected && isHost) {
+                    // As the host, send sync signal with timestamp
+                    sendDataMessage({
+                        type: 'sync',
+                        timestamp: Date.now(),
+                        hostTime: lastSyncTime
+                    });
+                }
+            }, 5000);
+        }
+        
+        // Stop sync interval
+        function stopSyncInterval() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+        }
+        
+        // Handle sync message
+        function handleSync(data) {
+            if (!isHost) {
+                // Calculate time difference and adjust if needed
+                const now = Date.now();
+                const roundTripTime = now - data.timestamp;
+                const estimatedServerTime = data.hostTime + (roundTripTime / 2);
+                
+                // Update sync status
+                syncStatus.innerHTML = `<i class="fas fa-sync"></i> Sync: Active (${Math.round(roundTripTime)}ms delay)`;
+                
+                // Store the last sync time
+                lastSyncTime = estimatedServerTime;
+            }
+        }
+        
+        // Simulate play for iframe
+        function simulatePlay() {
+            // For iframes, we can't directly control playback
+            // This would need to be handled by the user manually
+            addSystemMessage('Friend is playing. Please play your video.');
+        }
+        
+        // Simulate pause for iframe
+        function simulatePause() {
+            // For iframes, we can't directly control playback
+            addSystemMessage('Friend paused. Please pause your video.');
+        }
+        
+        // Simulate seek for iframe
+        function simulateSeek(time) {
+            // For iframes, we can't directly control seeking
+            addSystemMessage(`Friend seeked to ${formatTime(time)}. Please seek to the same time.`);
+        }
+        
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+        
+        // Copy room code to clipboard
+        function copyRoomCode() {
+            navigator.clipboard.writeText(roomId).then(() => {
+                alert('Room code copied to clipboard: ' + roomId);
+            });
+        }
+        
+        // Play/Pause toggle
+        function playPause() {
+            if (!currentIframe) return;
+            
+            // For iframes, we can't directly control playback
+            // So we'll just send the command and let the user handle it
+            if (isConnected) {
+                // Toggle based on current button text
+                if (playPauseBtn.innerHTML.includes('Play')) {
+                    sendDataMessage({ type: 'play' });
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    addSystemMessage('Playing video. Your friend should play too.');
+                } else {
+                    sendDataMessage({ type: 'pause' });
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+                    addSystemMessage('Paused video. Your friend should pause too.');
+                }
+            }
+        }
+        
+        // Restart video
+        function restart() {
+            if (!currentIframe) return;
+            
+            // For iframes, we can't directly control seeking
+            if (isConnected) {
+                sendDataMessage({ type: 'seek', time: 0 });
+                sendDataMessage({ type: 'play' });
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                addSystemMessage('Restarting video. Your friend should seek to beginning and play.');
+            }
+        }
+        
+        // Sync video
+        function syncVideo() {
+            if (isConnected && currentIframe) {
+                // For iframes, we can't directly get the current time
+                // So we'll just send a sync request
+                sendDataMessage({ 
+                    type: 'sync',
+                    timestamp: Date.now(),
+                    hostTime: lastSyncTime
+                });
+                addSystemMessage('Synchronization requested');
+            }
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!currentIframe) return;
+            
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                videoContainer.requestFullscreen().catch(err => {
+                    console.error('Error attempting to enable fullscreen:', err);
+                });
+            }
+        }
+        
+        // Send chat message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            
+            if (message) {
+                addMessage(message, 'self');
+                chatInput.value = '';
+                
+                if (isConnected) {
+                    sendDataMessage({ type: 'chat', message: message });
+                }
+            }
+        }
+        
+        // Add message to chat
+        function addMessage(text, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = text;
+            chatMessages.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Add system message to chat
+        function addSystemMessage(text) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'system');
+            messageElement.textContent = text;
+            chatMessages.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Enable controls
+        function enableControls() {
+            document.querySelectorAll('button:not(#copyRoomCode):not(#createRoomBtn):not(#joinRoomBtn)').forEach(btn => {
+                btn.disabled = false;
+            });
+            chatInput.disabled = false;
+        }
+        
+        // Disable controls
+        function disableControls() {
+            document.querySelectorAll('button:not(#copyRoomCode):not(#createRoomBtn):not(#joinRoomBtn)').forEach(btn => {
+                btn.disabled = true;
+            });
+            chatInput.disabled = true;
+        }
+        
+        // Initialize the app when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
